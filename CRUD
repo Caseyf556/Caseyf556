@@ -1,0 +1,70 @@
+#Casey Farmer
+from pymongo import MongoClient
+from bson.objectid import ObjectId
+import logging
+
+class AnimalShelter(object):
+    """ CRUD operations for Animal collection in MongoDB """
+
+    def __init__(self, username, password):
+        USER = username
+        PASS = password
+        HOST = 'nv-desktop-services.apporto.com'
+        PORT = 34386
+        DB = 'AAC'
+        COL = 'animals'
+        self.client = MongoClient('mongodb://%s:%s@%s:%d' % (USER,PASS,HOST,PORT))
+        self.database = self.client['%s' % (DB)]
+        self.collection = self.database['%s' % (COL)]
+        
+        # Configure logging
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger(__name__)
+
+    def create(self, data):
+        if data is not None:
+            try:
+                insertSuccess = self.database.animals.insert_one(data)
+                self.logger.info("Data inserted successfully")
+                return insertSuccess.acknowledged
+            except Exception as e:
+                self.logger.error(f"An error occurred while inserting data: {e}")
+                return False
+        else:
+            raise ValueError("Nothing to save, because data parameter is empty")
+
+    def read(self, searchData):
+        try:
+            if searchData:
+                data = self.database.animals.find(searchData, {"_id": False})
+            else:
+                data = self.database.animals.find({}, {"_id": False})
+            self.logger.info("Data read successfully")
+            return [doc for doc in data]
+        except Exception as e:
+            self.logger.error(f"An error occurred while reading data: {e}")
+            return []
+
+    def update(self, searchData, updateData):
+        if searchData is not None:
+            try:
+                result = self.database.animals.update_many(searchData, {"$set": updateData})
+                self.logger.info("Data updated successfully")
+                return result.raw_result
+            except Exception as e:
+                self.logger.error(f"An error occurred while updating data: {e}")
+                return {}
+        else:
+            raise ValueError("Search data parameter is empty")
+
+    def delete(self, deleteData):
+        if deleteData is not None:
+            try:
+                result = self.database.animals.delete_many(deleteData)
+                self.logger.info("Data deleted successfully")
+                return result.raw_result
+            except Exception as e:
+                self.logger.error(f"An error occurred while deleting data: {e}")
+                return {}
+        else:
+            raise ValueError("Delete data parameter is empty")
